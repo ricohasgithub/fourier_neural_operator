@@ -173,7 +173,7 @@ train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_trai
 test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=batch_size, shuffle=False)
 
 # model
-model = FNO1d(modes, width).cuda()
+model = FNO1d(modes, width)
 print(count_params(model))
 
 ################################################################
@@ -189,7 +189,7 @@ for ep in range(epochs):
     train_mse = 0
     train_l2 = 0
     for x, y in train_loader:
-        x, y = x.cuda(), y.cuda()
+        x, y = x, y
 
         optimizer.zero_grad()
         out = model(x)
@@ -207,7 +207,7 @@ for ep in range(epochs):
     test_l2 = 0.0
     with torch.no_grad():
         for x, y in test_loader:
-            x, y = x.cuda(), y.cuda()
+            x, y = x, y
 
             out = model(x)
             test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
@@ -219,14 +219,14 @@ for ep in range(epochs):
     t2 = default_timer()
     print(ep, t2-t1, train_mse, train_l2, test_l2)
 
-# torch.save(model, 'model/ns_fourier_burgers')
+torch.save(model, 'model/ns_fourier_burgers')
 pred = torch.zeros(y_test.shape)
 index = 0
 test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=1, shuffle=False)
 with torch.no_grad():
     for x, y in test_loader:
         test_l2 = 0
-        x, y = x.cuda(), y.cuda()
+        x, y = x, y
 
         out = model(x).view(-1)
         pred[index] = out
@@ -235,4 +235,4 @@ with torch.no_grad():
         print(index, test_l2)
         index = index + 1
 
-# scipy.io.savemat('pred/burger_test.mat', mdict={'pred': pred.cpu().numpy()})
+scipy.io.savemat('pred/burger_test.mat', mdict={'pred': pred.cpu().numpy()})

@@ -39,4 +39,5 @@ for j=1:N
     end
     
     disp(j);
+    %save('burgers_data_R10.mat', 'j')
 end

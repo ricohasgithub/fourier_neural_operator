@@ -2,10 +2,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
 import matplotlib.pyplot as plt
 from utilities3 import *
-
 import operator
 from functools import reduce
 from functools import partial
@@ -134,23 +132,23 @@ class Net2d(nn.Module):
 
 t1 = default_timer()
 
-TEST_PATH = 'data/ns_data_V1e-4_N20_T50_test.mat'
+TEST_PATH = 'data/ns_data_V1e-4_N20_T50_R256test.mat'
 
 
 ntest = 20
 
-sub = 1
-sub_t = 1
+sub = 4
+sub_t = 4
 S = 64
 T_in = 10
 T = 20
 
-indent = 1
+indent = 3
 
 # load data
 reader = MatReader(TEST_PATH)
-test_a = reader.read_field('u')[:,::sub,::sub, 3:T_in*4:4]
-test_u = reader.read_field('u')[:,::sub,::sub, indent+T_in*4:indent+(T+T_in)*4:sub_t]
+test_a = reader.read_field('u')[:,::sub,::sub, indent:T_in*4:4] #([0, T_in])
+test_u = reader.read_field('u')[:,::sub,::sub, indent+T_in*4:indent+(T+T_in)*4:sub_t] #([T_in, T_in + T])
 
 print(test_a.shape, test_u.shape)
 
@@ -172,10 +170,10 @@ test_a = torch.cat((gridx.repeat([ntest,1,1,1,1]), gridy.repeat([ntest,1,1,1,1])
 
 t2 = default_timer()
 print('preprocessing finished, time used:', t2-t1)
-device = torch.device('cuda')
+device = torch.device('cpu')
 
 # load model
-model = torch.load('model/ns_fourier_V1e-4_T20_N9800_ep200_m12_w32')
+model = torch.load('model/ns_fourier_V1e-4_T20_N9800_ep200_m12_w32', map_location=torch.device('cpu'))
 
 print(model.count_params())
 
@@ -187,7 +185,7 @@ index = 0
 with torch.no_grad():
     test_l2 = 0
     for x, y in test_loader:
-        x, y = x.cuda(), y.cuda()
+        x, y = x, y
 
         out = model(x)
         pred[index] = out
@@ -199,8 +197,3 @@ print(test_l2/ntest)
 
 path = 'eval'
 scipy.io.savemat('pred/'+path+'.mat', mdict={'pred': pred.cpu().numpy(), 'u': test_u.cpu().numpy()})
-
-
-
-
-

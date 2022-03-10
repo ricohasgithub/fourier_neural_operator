@@ -4,6 +4,7 @@ This file is the Fourier Neural Operator for 3D problem such as the Navier-Stoke
 which takes the 2D spatial + 1D temporal equation directly as a 3D problem
 """
 
+# Initial condition variance -- vary macrostructures
 
 import torch
 import numpy as np
@@ -162,8 +163,8 @@ class FNO3d(nn.Module):
 # configs
 ################################################################
 
-TRAIN_PATH = 'data/ns_data_V100_N1000_T50_1.mat'
-TEST_PATH = 'data/ns_data_V100_N1000_T50_2.mat'
+TRAIN_PATH = 'data/ns_data_V100_N1000_T50.mat'
+TEST_PATH = 'data/ns_data_V100_N1000_T50.mat'
 
 ntrain = 1000
 ntest = 200
@@ -232,12 +233,12 @@ test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(test_a,
 t2 = default_timer()
 
 print('preprocessing finished, time used:', t2-t1)
-device = torch.device('cuda')
+device = torch.device('cpu')
 
 ################################################################
 # training and evaluation
 ################################################################
-model = FNO3d(modes, modes, modes, width).cuda()
+model = FNO3d(modes, modes, modes, width)
 # model = torch.load('model/ns_fourier_V100_N1000_ep100_m8_w20')
 
 print(count_params(model))
@@ -246,14 +247,14 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step,
 
 
 myloss = LpLoss(size_average=False)
-y_normalizer.cuda()
+#y_normalizer.cuda()
 for ep in range(epochs):
     model.train()
     t1 = default_timer()
     train_mse = 0
     train_l2 = 0
     for x, y in train_loader:
-        x, y = x.cuda(), y.cuda()
+        # x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
         out = model(x).view(batch_size, S, S, T)
@@ -276,7 +277,7 @@ for ep in range(epochs):
     test_l2 = 0.0
     with torch.no_grad():
         for x, y in test_loader:
-            x, y = x.cuda(), y.cuda()
+            #x, y = x.cuda(), y.cuda()
 
             out = model(x).view(batch_size, S, S, T)
             out = y_normalizer.decode(out)
@@ -297,7 +298,7 @@ test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(test_a,
 with torch.no_grad():
     for x, y in test_loader:
         test_l2 = 0
-        x, y = x.cuda(), y.cuda()
+        # x, y = x.cuda(), y.cuda()
 
         out = model(x)
         out = y_normalizer.decode(out)
